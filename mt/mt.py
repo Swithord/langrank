@@ -4,21 +4,23 @@ import lightgbm as lgb
 from lightgbm import LGBMRanker
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import ndcg_score
+import letor_metrics
 
-# Load the data
-data = pd.read_csv('mt.csv')
+
+data = pd.read_csv('mt_updated.csv')
 groups = data['Source lang']
 logo = LeaveOneGroupOut()
-# Define feature columns and target column
-features = [
-    'Overlap word-level', 'Overlap subword-level', 'Transfer lang dataset size',
-    'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
-    'Target lang TTR', 'Transfer target TTR distance', 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC'
-]
+# Experiments with ALL, DATASET, and URIEL, respectively
+
+# features = [
+#     'Overlap word-level', 'Overlap subword-level', 'Transfer lang dataset size',
+#     'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
+#     'Target lang TTR', 'Transfer target TTR distance', 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC'
+# ]
 # features = ['Overlap word-level', 'Overlap subword-level', 'Transfer lang dataset size',
 #             'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
 #             'Target lang TTR', 'Transfer target TTR distance']
-# features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 
 data['relevance'] = 0
 
@@ -32,7 +34,6 @@ for source_lang in data['Source lang'].unique():
 groups = data['Source lang']
 ndcg_scores = []
 
-# Parameters for ranker
 ranker = LGBMRanker(
     boosting_type='gbdt',
     objective ='lambdarank',
@@ -56,23 +57,26 @@ for train_idx, test_idx in logo.split(data, groups=groups):
     test_y = test_data['relevance']
 
 
-    # Prepare LightGBM dataset
     train_dataset = lgb.Dataset(train_X, label=train_y,group=query)
     test_dataset = lgb.Dataset(test_X, label=test_y, group=[53], reference=train_dataset)
 
-
-    # Train the model
-    ranker.fit(train_X, train_y, group=query, eval_set=[(test_X, test_y)], eval_group=[[53]], eval_at=[3])
+    # train_group_sizes = train_data.groupby('Transfer lang').size().tolist()
+    # Train
+    ranker.fit(train_X, train_y, group=query, eval_set=[(test_X, test_y)], eval_group=[[53]], eval_at=[3],verbose=-1)
 
     # Predict and evaluate NDCG@3
     y_pred = ranker.predict(test_X)
-    ndcg = ndcg_score([test_y], [y_pred], k=3)
+    #linear ndcg
+    ndcg = ndcg_score([test_y.values], [y_pred], k=3)
+    #exp ndcg
+    # ndcg = letor_metrics.ndcg_score(test_y.values,y_pred,3)
     ndcg_scores.append(ndcg)
 
+# Calculate the average NDCG@3 score
+average_ndcg = np.mean(ndcg_scores)
+print(f'Average NDCG@3: {average_ndcg * 100}')
 
 #final model
 ranker.fit(data[features], data['relevance'], group=[53] * 54)
 ranker.booster_.save_model('LightGBM_model.txt')
-# Calculate the average NDCG@3 score
-average_ndcg = np.mean(ndcg_scores)
-print(f'Average NDCG@3: {average_ndcg}')
+
