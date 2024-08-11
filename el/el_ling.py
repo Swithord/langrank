@@ -5,7 +5,7 @@ from sklearn.metrics import ndcg_score
 import letor_metrics
 
 # Load the data
-data_path = 'data_el.csv'
+data_path = 'el_updated.csv'
 data = pd.read_csv(data_path)
 
 linguistic_features = ['GENETIC', 'SYNTACTIC', 'FEATURAL', 'PHONOLOGICAL', 'INVENTORY', 'GEOGRAPHIC']
@@ -52,5 +52,5 @@ for feature in linguistic_features:
 
 
 for feature, mean_ndcg in results.items():
-    print(f'Mean NDCG@3 for {feature}: {round(mean_ndcg*100,1)}')
+    print(f'Mean NDCG@3 for {feature}: {mean_ndcg}')
 

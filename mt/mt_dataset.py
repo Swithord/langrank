@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 from sklearn.metrics import ndcg_score
 import letor_metrics
-# Load the data
+# Load the data2
 data_path = 'mt.csv'
 data = pd.read_csv(data_path)
 

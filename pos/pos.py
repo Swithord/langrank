@@ -6,16 +6,17 @@ from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import ndcg_score
 import letor_metrics
 # Load the data
-data = pd.read_csv('data_tsfpos.csv')
+data = pd.read_csv('pos_updated.csv')
+
 logo = LeaveOneGroupOut()
 # Define feature columns and target column
 
-# features = ['Overlap word-level','Transfer lang dataset size','Target lang dataset size','Transfer over target size ratio',
-#             'Transfer lang TTR','Target lang TTR','Transfer target TTR distance',
-#             'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 features = ['Overlap word-level','Transfer lang dataset size','Target lang dataset size','Transfer over target size ratio',
-            'Transfer lang TTR','Target lang TTR','Transfer target TTR distance']
-features = ['GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+            'Transfer lang TTR','Target lang TTR','Transfer target TTR distance',
+            'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+# features = ['Overlap word-level','Transfer lang dataset size','Target lang dataset size','Transfer over target size ratio',
+#             'Transfer lang TTR','Target lang TTR','Transfer target TTR distance']
+# features = ['GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 data['relevance'] = 0
 
 # assign relevances from 10 to 0

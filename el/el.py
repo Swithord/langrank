@@ -8,7 +8,7 @@ from sklearn.metrics import ndcg_score
 import letor_metrics
 
 # Load the data
-data = pd.read_csv('data_tsfel.csv')
+data = pd.read_csv('el_updated.csv')
 groups = data['Target lang']
 logo = LeaveOneGroupOut()
 # Define feature columns and target column
@@ -18,7 +18,7 @@ logo = LeaveOneGroupOut()
 #      'Transfer lang dataset size',
 #     'Target lang dataset size', 'Transfer over target size ratio','Entity overlap'
 # ]
-# features = ['GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+features = ['GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 target = 'Accuracy'
 
 data['relevance'] = 0
@@ -28,7 +28,6 @@ for source_lang in data['Target lang'].unique():
     top_indices = source_lang_data[source_lang_data['rank'] <= 10].index
     data.loc[top_indices, 'relevance'] = 11 - source_lang_data.loc[top_indices, 'rank']
 
-data.to_csv('data_el.csv', index=False)
 groups = data['Target lang']
 ndcg_scores = []
 
@@ -57,14 +56,14 @@ for train_idx, test_idx in logo.split(data, groups=groups):
     test_X = test_data[features]
     test_y = test_data['relevance']
 
-
+    train_group_sizes = train_data.groupby('Target lang').size().tolist()
     # Prepare LightGBM dataset with query information
-    train_dataset = lgb.Dataset(train_X, label=train_y,group=query)
-    test_dataset = lgb.Dataset(test_X, label=test_y, group=[53], reference=train_dataset)
+    train_dataset = lgb.Dataset(train_X, label=train_y,group=train_group_sizes)
+    test_dataset = lgb.Dataset(test_X, label=test_y, group=[len(test_y)], reference=train_dataset)
 
 
     # Train the model
-    ranker.fit(train_X, train_y, group=query, eval_set=[(test_X, test_y)], eval_group=[[53]])
+    ranker.fit(train_X, train_y, group=train_group_sizes)
 
     # Predict and evaluate NDCG@3
     y_pred = ranker.predict(test_X)
@@ -72,8 +71,8 @@ for train_idx, test_idx in logo.split(data, groups=groups):
     # ndcg = letor_metrics.ndcg_score(test_y.values, y_pred,k=3)
     ndcg_scores.append(ndcg)
 
-
-ranker.fit(data[features], data['relevance'],group=[53]*9)
+group = data.groupby('Target lang').size().tolist()
+ranker.fit(data[features], data['relevance'],group=group)
 ranker.booster_.save_model('LightGBM_model_el.txt')
 # Calculate the average NDCG@3 score
 average_ndcg = np.mean(ndcg_scores)

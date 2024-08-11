@@ -3,7 +3,7 @@ import numpy as np
 import letor_metrics
 from sklearn.metrics import ndcg_score
 # Load the data
-data_path = 'data_tsfparsing.csv'
+data_path = 'dep_updated.csv'
 data = pd.read_csv(data_path)
 
 linguistic_features = ['GENETIC', 'SYNTACTIC', 'FEATURAL', 'PHONOLOGICAL', 'INVENTORY', 'GEOGRAPHIC']
@@ -50,6 +50,7 @@ for feature in linguistic_features:
         source_lang_data['rank'] = source_lang_data[feature].rank(method='min', ascending=True)
         top_indices = source_lang_data[source_lang_data['rank'] <= 3].index
         data.loc[top_indices, f'{feature}_relevance'] = 4 - source_lang_data.loc[top_indices, 'rank']
+
 
 results = {}
 

@@ -7,16 +7,16 @@ import letor_metrics
 from sklearn.metrics import ndcg_score
 
 # Load the data
-data = pd.read_csv('data_tsfparsing.csv')
+data = pd.read_csv('dep_updated.csv')
 logo = LeaveOneGroupOut()
 # Define feature columns and target column
 features = ['Word overlap','Transfer lang dataset size',
             'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
             'Target lang TTR', 'Transfer target TTR distance','GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
-features = ['Word overlap','Transfer lang dataset size',
-            'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
-            'Target lang TTR', 'Transfer target TTR distance']
-features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+# features = ['Word overlap','Transfer lang dataset size',
+#             'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
+#             'Target lang TTR', 'Transfer target TTR distance']
+# features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 
 data['relevance'] = 0
 

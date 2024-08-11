@@ -8,10 +8,13 @@ import letor_metrics
 
 
 data = pd.read_csv('mt_updated.csv')
+# updates = pd.read_csv('mt_updated.csv')
+# features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+# for feature in features:
+#     data[feature] = updates[feature]
 groups = data['Source lang']
 logo = LeaveOneGroupOut()
 # Experiments with ALL, DATASET, and URIEL, respectively
-
 # features = [
 #     'Overlap word-level', 'Overlap subword-level', 'Transfer lang dataset size',
 #     'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',

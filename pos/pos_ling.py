@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics import ndcg_score
 import letor_metrics
 # Load the data
-data_path = 'data_tsfpos.csv'
+data_path = 'pos_updated.csv'
 data = pd.read_csv(data_path)
 
 linguistic_features = ['GENETIC', 'SYNTACTIC', 'FEATURAL', 'PHONOLOGICAL', 'INVENTORY', 'GEOGRAPHIC']
