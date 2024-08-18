@@ -7,7 +7,7 @@ from sklearn.metrics import ndcg_score
 import letor_metrics
 
 
-data = pd.read_csv('mt_updated.csv')
+data = pd.read_csv('mt_updated_removed.csv')
 # updates = pd.read_csv('mt_updated.csv')
 # features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 # for feature in features:
@@ -47,7 +47,6 @@ ranker = LGBMRanker(
     verbose=-1
 )
 
-query = [53] * 53
 
 #leave one language out
 for train_idx, test_idx in logo.split(data, groups=groups):
@@ -59,13 +58,13 @@ for train_idx, test_idx in logo.split(data, groups=groups):
     test_X = test_data[features]
     test_y = test_data['relevance']
 
+    train_group_sizes = train_data.groupby('Transfer lang').size().tolist()
 
-    train_dataset = lgb.Dataset(train_X, label=train_y,group=query)
-    test_dataset = lgb.Dataset(test_X, label=test_y, group=[53], reference=train_dataset)
+    train_dataset = lgb.Dataset(train_X, label=train_y,group=train_group_sizes)
+    test_dataset = lgb.Dataset(test_X, label=test_y, group=[len(test_y)], reference=train_dataset)
 
-    # train_group_sizes = train_data.groupby('Transfer lang').size().tolist()
     # Train
-    ranker.fit(train_X, train_y, group=query, eval_set=[(test_X, test_y)], eval_group=[[53]], eval_at=[3],verbose=-1)
+    ranker.fit(train_X, train_y, group=train_group_sizes, verbose=-1)
 
     # Predict and evaluate NDCG@3
     y_pred = ranker.predict(test_X)
@@ -80,6 +79,6 @@ average_ndcg = np.mean(ndcg_scores)
 print(f'Average NDCG@3: {average_ndcg * 100}')
 
 #final model
-ranker.fit(data[features], data['relevance'], group=[53] * 54)
-ranker.booster_.save_model('LightGBM_model.txt')
+# ranker.fit(data[features], data['relevance'], group=[53] * 54)
+# ranker.booster_.save_model('LightGBM_model.txt')
 

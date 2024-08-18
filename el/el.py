@@ -12,8 +12,8 @@ data = pd.read_csv('el_updated.csv')
 groups = data['Target lang']
 logo = LeaveOneGroupOut()
 # Define feature columns and target column
-# features = ['Entity overlap','Transfer lang dataset size','Target lang dataset size',
-#             'Transfer over target size ratio','GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+features = ['Entity overlap','Transfer lang dataset size','Target lang dataset size',
+            'Transfer over target size ratio','GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 # features = [
 #      'Transfer lang dataset size',
 #     'Target lang dataset size', 'Transfer over target size ratio','Entity overlap'
@@ -42,7 +42,7 @@ ranker = LGBMRanker(
     verbose=-1
 )
 
-query = [53] * 8
+
 
 all_rankings = pd.DataFrame()
 
