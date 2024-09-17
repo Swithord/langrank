@@ -1,13 +1,15 @@
+import lightgbm
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
 from lightgbm import LGBMRanker
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import ndcg_score
+import matplotlib.pyplot as plt
 import letor_metrics
 
 
-data = pd.read_csv('mt_updated_removed.csv')
+data = pd.read_csv('mt.csv')
 # updates = pd.read_csv('mt_updated.csv')
 # features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 # for feature in features:
@@ -15,11 +17,11 @@ data = pd.read_csv('mt_updated_removed.csv')
 groups = data['Source lang']
 logo = LeaveOneGroupOut()
 # Experiments with ALL, DATASET, and URIEL, respectively
-# features = [
-#     'Overlap word-level', 'Overlap subword-level', 'Transfer lang dataset size',
-#     'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
-#     'Target lang TTR', 'Transfer target TTR distance', 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC'
-# ]
+features = [
+    'Overlap word-level', 'Overlap subword-level', 'Transfer lang dataset size',
+    'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
+    'Target lang TTR', 'Transfer target TTR distance', 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC'
+]
 # features = ['Overlap word-level', 'Overlap subword-level', 'Transfer lang dataset size',
 #             'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
 #             'Target lang TTR', 'Transfer target TTR distance']
@@ -78,7 +80,10 @@ for train_idx, test_idx in logo.split(data, groups=groups):
 average_ndcg = np.mean(ndcg_scores)
 print(f'Average NDCG@3: {average_ndcg * 100}')
 
-#final model
-# ranker.fit(data[features], data['relevance'], group=[53] * 54)
-# ranker.booster_.save_model('LightGBM_model.txt')
+#final model)
+ranker.fit(data[features], data['relevance'], group=[53] * 54)
+print(ranker.feature_importances_)
+lightgbm.plot_importance(ranker, importance_type='split')
+plt.show()
+ranker.booster_.save_model('LightGBM_model.txt')
 

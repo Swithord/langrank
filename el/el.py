@@ -2,13 +2,14 @@ import pandas as pd
 import numpy as np
 import lightgbm as lgb
 from lightgbm import LGBMRanker
+from matplotlib import pyplot as plt
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import ndcg_score
 
 import letor_metrics
 
 # Load the data
-data = pd.read_csv('el_updated.csv')
+data = pd.read_csv('el_updated_with_west_oromo.csv')
 groups = data['Target lang']
 logo = LeaveOneGroupOut()
 # Define feature columns and target column
@@ -18,7 +19,7 @@ features = ['Entity overlap','Transfer lang dataset size','Target lang dataset s
 #      'Transfer lang dataset size',
 #     'Target lang dataset size', 'Transfer over target size ratio','Entity overlap'
 # ]
-features = ['GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+# features = ['GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 target = 'Accuracy'
 
 data['relevance'] = 0
@@ -73,6 +74,9 @@ for train_idx, test_idx in logo.split(data, groups=groups):
 
 group = data.groupby('Target lang').size().tolist()
 ranker.fit(data[features], data['relevance'],group=group)
+lgb.plot_importance(ranker, importance_type='split')
+print(ranker.feature_importances_)
+plt.show()
 ranker.booster_.save_model('LightGBM_model_el.txt')
 # Calculate the average NDCG@3 score
 average_ndcg = np.mean(ndcg_scores)

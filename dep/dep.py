@@ -2,12 +2,13 @@ import pandas as pd
 import numpy as np
 import lightgbm as lgb
 from lightgbm import LGBMRanker
+from matplotlib import pyplot as plt
 from sklearn.model_selection import LeaveOneGroupOut
 import letor_metrics
 from sklearn.metrics import ndcg_score
 
 # Load the data
-data = pd.read_csv('dep_updated.csv')
+data = pd.read_csv('data_tsfparsing.csv')
 logo = LeaveOneGroupOut()
 # Define feature columns and target column
 features = ['Word overlap','Transfer lang dataset size',
@@ -16,7 +17,7 @@ features = ['Word overlap','Transfer lang dataset size',
 # features = ['Word overlap','Transfer lang dataset size',
 #             'Target lang dataset size', 'Transfer over target size ratio', 'Transfer lang TTR',
 #             'Target lang TTR', 'Transfer target TTR distance']
-# features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
+features = [ 'GENETIC','SYNTACTIC','FEATURAL','PHONOLOGICAL','INVENTORY','GEOGRAPHIC']
 
 data['relevance'] = 0
 
@@ -81,6 +82,9 @@ for train_idx, test_idx in logo.split(data, groups=groups):
 
 #final model
 ranker.fit(data[features], data['relevance'], group=[29] * 30)
+print(ranker.feature_importances_)
+lgb.plot_importance(ranker, importance_type='split')
+plt.show()
 ranker.booster_.save_model('LightGBM_model.txt')
 # Calculate the average NDCG@3 score
 average_ndcg = np.mean(ndcg_scores)

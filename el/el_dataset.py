@@ -20,6 +20,7 @@ for source_lang in data['Target lang'].unique():
     source_lang_data = data[data['Target lang'] == source_lang].copy()
     source_lang_data['rank'] = source_lang_data['Accuracy'].rank(method='min', ascending=False)
     top_indices = source_lang_data[source_lang_data['rank'] <= 3].index
+    print(source_lang, top_indices)
     data.loc[top_indices, 'relevance'] = 4 - source_lang_data.loc[top_indices, 'rank']
 
 
