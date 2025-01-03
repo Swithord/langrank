@@ -5,7 +5,7 @@ from sklearn.metrics import ndcg_score
 import letor_metrics
 
 # Load the data
-data_path = 'data_tsfel.csv'
+data_path = 'data_tsfel_ISO639-1.csv'
 data = pd.read_csv(data_path)
 
 dataset_features = ['Entity overlap','Transfer over target size ratio']

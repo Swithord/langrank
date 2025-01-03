@@ -8,7 +8,7 @@ import letor_metrics
 from sklearn.metrics import ndcg_score
 
 # Load the data
-data = pd.read_csv('data_tsfparsing.csv')
+data = pd.read_csv('dep.csv')
 logo = LeaveOneGroupOut()
 # Define feature columns and target column
 features = ['Word overlap','Transfer lang dataset size',
@@ -84,10 +84,10 @@ for train_idx, test_idx in logo.split(data, groups=groups):
 ranker.fit(data[features], data['relevance'], group=[29] * 30)
 print(ranker.feature_importances_)
 lgb.plot_importance(ranker, importance_type='split')
-plt.show()
-ranker.booster_.save_model('LightGBM_model.txt')
+# plt.show()
 # Calculate the average NDCG@3 score
 average_ndcg = np.mean(ndcg_scores)
 print(f'Average NDCG@3: {round(average_ndcg*100,1)}')
+print([round(float(x), 3) for x in ndcg_scores])
 
 

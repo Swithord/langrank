@@ -5,7 +5,7 @@ from sklearn.metrics import ndcg_score
 import letor_metrics
 
 # Load the data
-data_path = 'data_tsfparsing.csv'
+data_path = 'dep.csv'
 data = pd.read_csv(data_path)
 
 dataset_features = ['Word overlap','Transfer over target size ratio', 'Transfer target TTR distance']

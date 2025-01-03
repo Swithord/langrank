@@ -5,11 +5,10 @@ from lightgbm import LGBMRanker
 from matplotlib import pyplot as plt
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import ndcg_score
-
 import letor_metrics
 
 # Load the data
-data = pd.read_csv('el_updated_with_west_oromo.csv')
+data = pd.read_csv('el.csv')
 groups = data['Target lang']
 logo = LeaveOneGroupOut()
 # Define feature columns and target column
@@ -40,7 +39,9 @@ ranker = LGBMRanker(
     num_leaves=16,
     min_data_in_leaf=5,
     output_model='LightGBM_model.txt',
-    verbose=-1
+    random_state=50,
+    verbose=0,
+    feature_fraction=0.8
 )
 
 
@@ -64,7 +65,7 @@ for train_idx, test_idx in logo.split(data, groups=groups):
 
 
     # Train the model
-    ranker.fit(train_X, train_y, group=train_group_sizes)
+    ranker.fit(train_X, train_y, group=train_group_sizes,verbose=-1)
 
     # Predict and evaluate NDCG@3
     y_pred = ranker.predict(test_X)
@@ -76,8 +77,9 @@ group = data.groupby('Target lang').size().tolist()
 ranker.fit(data[features], data['relevance'],group=group)
 lgb.plot_importance(ranker, importance_type='split')
 print(ranker.feature_importances_)
-plt.show()
+# plt.show()
 ranker.booster_.save_model('LightGBM_model_el.txt')
 # Calculate the average NDCG@3 score
+print([round(float(x),4) for x in ndcg_scores])
 average_ndcg = np.mean(ndcg_scores)
 print(f'Average NDCG@3: {round(average_ndcg*100,1)}')
