@@ -7,6 +7,8 @@ After training some model on an NLP task, and evaluating the model's performance
 
 Specifically, LangRank trains a LightGBM classifier on a dataset of **(task language, transfer language, model performance, dataset-dependent features, URIEL distances)** corresponding to a specific model and task *(e.g. machine translation with an LLM on the TED talk corpus)*. This dataset is collected after training the model on the task in each transfer language separately, and evaluating the model's performance on each task language with transfer from each transfer language. "Dataset-dependent features" refer to statistical features of the training dataset used in the task *(e.g. word overlap between task and transfer languages in the TED talk corpora for machine translation)*. The classifier takes in **(task language, dataset-dependent features, URIEL distances)** and outputs a ranking of the best transfer languages, based on its predictions of model performance.
 
+For more details, refer to the [original paper](https://aclanthology.org/P19-1301.pdf)
+
 ### URIEL(+) Evaluation
 
 We use LangRank as a downstream task to evaluate URIEL(+) distances. The file `run_evaluation.py` contains the code to supply language distances to LangRank and evaluate its performance.
