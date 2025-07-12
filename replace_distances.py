@@ -8,6 +8,7 @@ def replace(filename):
     el_df = pd.read_csv('el/el_updated.csv')
     mt_df = pd.read_csv('mt/mt_updated.csv')
     pos_df = pd.read_csv('pos/pos_updated.csv')
+    taxi1500_df = pd.read_csv('taxi1500/taxi1500.csv')
 
     selected_df = pd.read_csv(filename, index_col=0)
     syn_df = selected_df[[col for col in selected_df.columns if col.startswith("S_")]]
@@ -69,3 +70,13 @@ def replace(filename):
         pos_df.at[index, "FEATURAL"] = u._angular_distance(selected_df.iloc[lang_1_idx].to_numpy(), selected_df.iloc[lang_2_idx].to_numpy())
 
     pos_df.to_csv('pos/pos_selected.csv')
+
+    for index, row in taxi1500_df.iterrows():
+        task_lang = row['task_lang']
+        transfer_lang = row['transfer_lang']
+        taxi1500_df.at[index, "syntactic"] = u._angular_distance(syn_df.loc[task_lang].to_numpy(), syn_df.loc[transfer_lang].to_numpy())
+        taxi1500_df.at[index, "inventory"] = u._angular_distance(inv_df.loc[task_lang].to_numpy(), inv_df.loc[transfer_lang].to_numpy())
+        taxi1500_df.at[index, "phonological"] = u._angular_distance(phon_df.loc[task_lang].to_numpy(), phon_df.loc[transfer_lang].to_numpy())
+        taxi1500_df.at[index, "featural"] = u._angular_distance(selected_df.loc[task_lang].to_numpy(), selected_df.loc[transfer_lang].to_numpy())
+
+    taxi1500_df.to_csv('taxi1500/taxi1500_selected.csv')
