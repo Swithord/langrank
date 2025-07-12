@@ -1,9 +1,13 @@
 ## Evaluating language distances with LangRank
 
-### Introduction
+### Background
 
-LangRank ranks transfer languages for cross-lingual transfer across four tasks: dependency parsing, entity linking, machine translation and part-of-speech tagging.
-LangRank uses URIEL distances and dataset-dependent features (statistical features of the specific corpora used in each task, e.g. word overlap between task and transfer languages in the TED talk corpora for machine translation), and ranks transfer language for a given task and task language using LightGBM.
+LangRank ranks transfer languages for NLP tasks. By default, it supports four NLP tasks: dependency parsing, entity linking, machine translation and part-of-speech tagging.
+After training some model on an NLP task, and evaluating the model's performance, LangRank trains a classifier on URIEL distances and dataset-dependent features to rank transfer language for each **(task language, transfer language)** pair.
+
+Specifically, LangRank trains a LightGBM classifier on a dataset of **(task language, transfer language, model performance, dataset-dependent features, URIEL distances)** corresponding to a specific model and task *(e.g. machine translation with an LLM on the TED talk corpus)*. This dataset is collected after training the model on the task in each transfer language separately, and evaluating the model's performance on each task language with transfer from each transfer language. "Dataset-dependent features" refer to statistical features of the training dataset used in the task *(e.g. word overlap between task and transfer languages in the TED talk corpora for machine translation)*. The classifier takes in **(task language, dataset-dependent features, URIEL distances)** and outputs a ranking of the best transfer languages, based on its predictions of model performance.
+
+For more details, refer to the [original paper](https://aclanthology.org/P19-1301.pdf)
 
 ### URIEL(+) Evaluation
 
@@ -14,5 +18,5 @@ Key functions:
 
 ### Metric
 
-LangRank performance is evaluated using NDCG@3, which is the normalized discounted cumulative gain at rank 3. It measures how well the top 3 ranked languages match the best transfer language for a given task and task language.
+LangRank performance is evaluated using NDCG@3, which is the normalized discounted cumulative gain at rank 3. It measures how well the top 3 ranked languages match the actual best transfer language for a given task and task language.
 The score ranges from 0 to 100, where 100 refers to perfect ranking.
