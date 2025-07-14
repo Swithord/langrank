@@ -30,9 +30,9 @@ def taxi1500(filename, features):
     ranker = LGBMRanker(
         boosting_type='gbdt',
         objective ='lambdarank',
-        n_estimators=100,
+        n_estimators=200,
         metric='lambdarank',
-        num_leaves=16,
+        num_leaves=31,
         min_data_in_leaf=5,
         verbose=-1
     )

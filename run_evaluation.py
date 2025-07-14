@@ -6,7 +6,7 @@ from pos.pos import pos
 from taxi1500.taxi1500 import taxi1500
 import pandas as pd
 
-methods = ['variance', 'mi']
+methods = ['variance', 'mi', 'PCA_importance', 'laplacian']
 tasks = ['taxi1500']
 
 # Change this to 'ALL' to use all sub-task relevant features (incl. distances)
@@ -57,7 +57,7 @@ baseline_df = pd.DataFrame(results['baseline'])
 baseline_df.to_csv('results/baseline_results_taxi1500.csv', index=False)
 
 for method in methods:
-    for i in range(100, 201, 100):
+    for i in range(100, 701, 100):
         replace(f'selection_result/imputed_{method}_{i}.csv')
         # dep_ndcg = dep('dep/dep_selected.csv', features_dep)
         # el_ndcg = el('el/el_selected.csv', features_el)
