@@ -23,14 +23,14 @@ Key methods of the `LangRankEvaluator` are:
 - `replace_distances`: Add/replace distances in the sub-task dataset. Parameters:
   * `dataset_path`: path to the sub-task dataset.
   * `distance_types`: list of distance types to calculate. These should be keys of the dictionary passed in to `LangRankEvaluator`. For example, if `distance_types=['syntactic']`, this method will add/replace values in the "syntactic" column of the dataset CSV with values calculated from the `DistanceCalculator` corresponding to "syntactic".
-  * task_col_name: name of the column containing the target language codes. Default is "target_lang".
-  * transfer_col_name: name of the column containing the transfer language codes. Default is "transfer_lang".
-  * iso_conversion: whether to convert language codes from ISO to Glottocode before calculating distances (i.e. if `True`, language codes are converted to Glottocodes before being passed into *all* `DistanceCalculator`s.). This will use the file path passed into `LangRankEvaluator` (or the default file path).
+  * `task_col_name`: name of the column containing the target language codes. Default is "target_lang".
+  * `transfer_col_name`: name of the column containing the transfer language codes. Default is "transfer_lang".
+  * `iso_conversion`: whether to convert language codes from ISO to Glottocode before calculating distances (i.e. if `True`, language codes are converted to Glottocodes before being passed into *all* `DistanceCalculator`s.). This will use the file path passed into `LangRankEvaluator` (or the default file path).
 - `evaluate`: Run LangRank and returns the average NDCG@3 score. Parameters:
   * `dataset_path`
   * `features`: list of dataset columns to be used when training the ranker.
   * `performance_col_name`: name of the column containing the performance scores (e.g., 'f1_score' in Taxi1500, 'BLEU' in machine translation)
-  * `source_col_name`
+  * `task_col_name`
   * `transfer_col_name`
 
 See `evaluate.ipynb` for a commented code example.
