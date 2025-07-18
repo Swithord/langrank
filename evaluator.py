@@ -38,8 +38,8 @@ class DistanceCalculator:
         intersection = list(idx_with_values_1.intersection(idx_with_values_2))
         if not intersection:
             return np.nan
-        return self.uriel._angular_distance(self.df.loc[lang1][intersection].to_numpy(),
-                                            self.df.loc[lang2][intersection].to_numpy())
+        return self.uriel._angular_distance(self.df.loc[lang1].iloc[intersection].to_numpy(),
+                                            self.df.loc[lang2].iloc[intersection].to_numpy())
 
 
 class SyntacticCalculator(DistanceCalculator):
@@ -120,7 +120,7 @@ class LangRankEvaluator:
         self.calculators = calculators
         self.iso_map = pd.read_csv(iso_map_file, index_col=0).to_dict()['glottocode']
 
-    def replace_distances(self, dataset_path: str, distance_types: list[str], task_col_name: str = 'Target lang', transfer_col_name: str = 'Transfer lang', iso_conversion: bool = True) -> None:
+    def replace_distances(self, dataset_path: str, distance_types: list[str], task_col_name: str = 'task_lang', transfer_col_name: str = 'transfer_lang', iso_conversion: bool = True) -> None:
         """
         Replace distances in the task dataset based on specified distance types.
         :param dataset_path: path to the task dataset (containing task, transfer, and performance columns)
@@ -146,27 +146,27 @@ class LangRankEvaluator:
         path_split = dataset_path.split('.')
         df.to_csv(f"{''.join(path_split[:-1])}_updated.{path_split[-1]}", index=False)
 
-    def evaluate(self, dataset_path: str, features: list[str], performance_col_name: str, source_col_name: str = 'Source lang', transfer_col_name: str = 'Transfer lang') -> float:
+    def evaluate(self, dataset_path: str, features: list[str], performance_col_name: str, task_col_name: str = 'task_lang', transfer_col_name: str = 'transfer_lang') -> float:
         """
         Run LangRank and collect NDCG@3 scores for the given task.
         :param dataset_path: path to the task dataset (containing task, transfer, and performance columns)
         :param features: list of feature names to train the ranker on (e.g., ['syntactic', 'inventory', 'phonological']). These should be columns in the dataset.
         :param performance_col_name: name of the column containing the performance scores (e.g., 'f1_score')
-        :param source_col_name: name of the column containing the source language codes (e.g., 'Source lang')
-        :param transfer_col_name: name of the column containing the transfer language codes (e.g., 'Transfer lang')
+        :param task_col_name: name of the column containing the task language codes (e.g., 'task_lang')
+        :param transfer_col_name: name of the column containing the transfer language codes (e.g., 'transfer_lang')
         :return: average NDCG@3 score across all leave-one-out iterations
         """
         data = pd.read_csv(dataset_path)
         logo = LeaveOneGroupOut()
         data['relevance'] = 0
 
-        for source_lang in data[source_col_name].unique():
-            source_lang_data = data[data[source_col_name] == source_lang].copy()
+        for source_lang in data[task_col_name].unique():
+            source_lang_data = data[data[task_col_name] == source_lang].copy()
             source_lang_data['rank'] = source_lang_data[performance_col_name].rank(method='min', ascending=False)
             top_indices = source_lang_data[source_lang_data['rank'] <= 10].index
             data.loc[top_indices, 'relevance'] = 11 - source_lang_data.loc[top_indices, 'rank']
 
-        groups = data[source_col_name]
+        groups = data[task_col_name]
         ndcg_scores = []
 
         ranker = LGBMRanker(
