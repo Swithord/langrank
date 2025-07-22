@@ -5,6 +5,7 @@ from sklearn.metrics import ndcg_score
 from urielplus.urielplus import URIELPlus
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class DistanceCalculator:
@@ -172,12 +173,20 @@ class LangRankEvaluator:
         ranker = LGBMRanker(
             boosting_type='gbdt',
             objective='lambdarank',
-            n_estimators=100,
             metric='lambdarank',
-            num_leaves=16,
-            min_data_in_leaf=5,
-            random_state=0,
-            # feature_fraction=0.8,
+
+            # New parameters
+            n_estimators=50,
+            min_child_samples=5,
+            num_leaves=8,
+            learning_rate=0.05,
+
+            # Old parameters
+            # n_estimators=100,
+            # min_data_in_leaf=5,
+            # num_leaves=16,
+            # learning_rate=0.1,
+
             verbose=-1
         )
 
@@ -194,10 +203,12 @@ class LangRankEvaluator:
             test_dataset = lgb.Dataset(test_X, label=test_y, group=[len(test_y)], reference=train_dataset)
 
             ranker.fit(train_X, train_y, group=train_group_sizes, eval_group=[[len(test_y)]], eval_set=[(test_X, test_y)], eval_at=[3])
-
             y_pred = ranker.predict(test_X)
             ndcg = ndcg_score([test_y.values], [y_pred], k=3)
             ndcg_scores.append(ndcg)
+
+        # lgb.plot_importance(ranker, importance_type='split')
+        # plt.show()
 
         average_ndcg = np.mean(ndcg_scores)
         return average_ndcg * 100
