@@ -117,7 +117,7 @@ class LangRankEvaluator:
     """
     Evaluate LangRank performance in predicting transfer language based on language distances.
     """
-    def __init__(self, calculators: dict[str, DistanceCalculator], iso_map_file: str = 'code_mapping.csv'):
+    def __init__(self, calculators: dict[str, DistanceCalculator], iso_map_file: str = 'data/code_mapping.csv'):
         self.calculators = calculators
         self.iso_map = pd.read_csv(iso_map_file, index_col=0).to_dict()['glottocode']
 
