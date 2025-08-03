@@ -1,6 +1,6 @@
 """
 feature dataset: A dataset containing linguistic features for various languages, like the one in data/URIELPlus_Union.csv.
-task dataset: A dataset containing task, transfer, and performance columns, such as the one in data/pos.csv.
+task dataset: A dataset containing task, transfer, and performance columns, such as the one in data/pos.csv.  
 """
 
 from typing import Callable, Optional
