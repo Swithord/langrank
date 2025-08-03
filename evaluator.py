@@ -20,7 +20,7 @@ class DistanceCalculator:
     -------
     - calculate_distance(lang1: str, lang2: str) -> float: Calculate the distance between two languages based on their linguistic features.
     """
-    def __init__(self, dataset_path: str, column_filter: Optional[Callable[[str], bool]] = None):
+    def __init__(self, df: pd.DataFrame, column_filter: Optional[Callable[[str], bool]] = None):
         """
         Initialize the distance calculator.
 
@@ -30,11 +30,6 @@ class DistanceCalculator:
         - column_filter: Function to filter column, follows the interface func(str)->bool. If None, uses all columns. Defaults to None.  
         """
         self.uriel = URIELPlus()
-        
-        if dataset_path is None:
-            raise ValueError("Dataset path must be provided.")
-        
-        df = pd.read_csv(dataset_path, index_col=0)
         
         if column_filter:
             self.df = df[[col for col in df.columns if column_filter(col)]]
@@ -71,29 +66,29 @@ class DistanceCalculator:
 
 
 # Factory functions for different distance types
-def create_syntactic_calculator(dataset_path: str) -> DistanceCalculator:
+def create_syntactic_calculator(df: pd.DataFrame) -> DistanceCalculator:
     """Create a calculator for syntactic distances."""
-    return DistanceCalculator(dataset_path, lambda col: col.startswith("S_"))
+    return DistanceCalculator(df, lambda col: col.startswith("S_"))
 
-def create_inventory_calculator(dataset_path: str) -> DistanceCalculator:
+def create_inventory_calculator(df: pd.DataFrame) -> DistanceCalculator:
     """Create a calculator for inventory distances."""
-    return DistanceCalculator(dataset_path, lambda col: col.startswith("INV_"))
+    return DistanceCalculator(df, lambda col: col.startswith("INV_"))
 
-def create_phonological_calculator(dataset_path: str) -> DistanceCalculator:
+def create_phonological_calculator(df: pd.DataFrame) -> DistanceCalculator:
     """Create a calculator for phonological distances."""
-    return DistanceCalculator(dataset_path, lambda col: col.startswith("P_"))
+    return DistanceCalculator(df, lambda col: col.startswith("P_"))
 
-def create_morphological_calculator(dataset_path: str) -> DistanceCalculator:
+def create_morphological_calculator(df: pd.DataFrame) -> DistanceCalculator:
     """Create a calculator for morphological distances."""
-    return DistanceCalculator(dataset_path, lambda col: col.startswith("M_"))
+    return DistanceCalculator(df, lambda col: col.startswith("M_"))
 
-def create_featural_calculator(dataset_path: str) -> DistanceCalculator:
+def create_featural_calculator(df: pd.DataFrame) -> DistanceCalculator:
     """Create a calculator for featural distances (uses all features)."""
-    return DistanceCalculator(dataset_path)
+    return DistanceCalculator(df)
 
-def create_scriptural_calculator(dataset_path: str) -> DistanceCalculator:
+def create_scriptural_calculator(df: pd.DataFrame) -> DistanceCalculator:
     """Create a calculator for scriptural distances (uses all features)."""
-    return DistanceCalculator(dataset_path)
+    return DistanceCalculator(df)
 
 
 class LangRankEvaluator:
