@@ -129,15 +129,6 @@ class GenericCalculator(DistanceCalculator):
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
 
-class GeographicCalculator(DistanceCalculator):
-    def __init__(self, language_centroid_style, dataset_path: str = None):
-        super().__init__()
-        self.df = integrate_geo_data(language_centroid_style)
-    
-    def calculate_distance(self, lang1: str, lang2: str, normalize_type: int) -> float:
-        result = normalized_w1_distance(lang1, lang2, self.df, normalize_type)
-        return result
-
 
 class IslandCalculator(DistanceCalculator):
     def __init__(self, dataset_path: str = None):
@@ -165,14 +156,14 @@ class IslandCalculator(DistanceCalculator):
         return result
 
 class GeographicCalculator(DistanceCalculator):
-    def __init__(self, dataset_path: str = None):
+    def __init__(self, language_centroid_style: int):
         super().__init__()
-        if dataset_path is None:
-            raise ValueError("Dataset path must be provided.")
-        self.df = pd.read_csv(dataset_path, index_col=0)
-
+        self.df = integrate_geo_data(language_centroid_style)
+    
     def calculate_distance(self, lang1: str, lang2: str) -> float:
-        return self.uriel.new_distance()
+        normalize_type = 2 #This changes the type of normalization for the final data [Can be 1 or 2]
+        result = normalized_w1_distance(lang1, lang2, self.df, normalize_type)
+        return result
 
 
 class LangRankEvaluator:
@@ -207,12 +198,12 @@ class LangRankEvaluator:
             for distance_type in distance_types:
                 if (distance_type == "geographic"):
                    code_replacements  = pd.read_csv("glottocode_replacements.csv") 
-                   for index,row in code_replacements.iterrows():
-                       if (target_lang == row["bad_iso"]):
-                           target_lang = row["replacement_iso"]
-                       if (transfer_lang == row["bad_iso"]):
-                           transfer_lang = row["replacement_iso"]
-                distance = self.calculators[distance_type].calculate_distance(target_lang, transfer_lang, 0)
+                   for idx, line in code_replacements.iterrows():
+                       if (target_lang == line["bad_iso"]):
+                           target_lang = line["replacement_iso"]
+                       if (transfer_lang == line["bad_iso"]):
+                           transfer_lang = line["replacement_iso"]
+                distance = self.calculators[distance_type].calculate_distance(target_lang, transfer_lang)
                 df.at[index, distance_type] = distance
         path_split = dataset_path.split('.')
         df.to_csv(f"{''.join(path_split[:-1])}_updated.{path_split[-1]}", index=False)
