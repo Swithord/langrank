@@ -13,6 +13,7 @@ from scipy.stats import ttest_rel
 import os
 import pickle
 from Latent_islands_URIEL.src.functions import distance_vector_input
+from geo_distributions_helper import integrate_geo_data, normalized_w1_distance
 
 
 
@@ -129,14 +130,13 @@ class GenericCalculator(DistanceCalculator):
         return self._vector_distance(lang1, lang2)
 
 class GeographicCalculator(DistanceCalculator):
-    def __init__(self, language_centroid_style, dataset_path: str = None, ):
+    def __init__(self, language_centroid_style, dataset_path: str = None):
         super().__init__()
-        self.uriel.integrate_ethnologue_geo(language_centroid_style)
-        print("Test8")
+        self.df = integrate_geo_data(language_centroid_style)
     
-    def calculate_distance(self, lang1: str, lang2: str) -> float:
-
-        return self.uriel.new_distance("geographic_w1_normalized", [lang1,lang2])
+    def calculate_distance(self, lang1: str, lang2: str, normalize_type: int) -> float:
+        result = normalized_w1_distance(lang1, lang2, self.df, normalize_type)
+        return result
 
 
 class IslandCalculator(DistanceCalculator):
@@ -212,7 +212,7 @@ class LangRankEvaluator:
                            target_lang = row["replacement_iso"]
                        if (transfer_lang == row["bad_iso"]):
                            transfer_lang = row["replacement_iso"]
-                distance = self.calculators[distance_type].calculate_distance(target_lang, transfer_lang)
+                distance = self.calculators[distance_type].calculate_distance(target_lang, transfer_lang, 0)
                 df.at[index, distance_type] = distance
         path_split = dataset_path.split('.')
         df.to_csv(f"{''.join(path_split[:-1])}_updated.{path_split[-1]}", index=False)
