@@ -1,3 +1,4 @@
+from typing import Tuple, List, Any
 from lightgbm import LGBMRanker
 import lightgbm as lgb
 from sklearn.model_selection import LeaveOneGroupOut
@@ -5,7 +6,11 @@ from sklearn.metrics import ndcg_score
 from urielplus.urielplus import URIELPlus
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+from scipy.stats import ttest_rel
+import os
+import pickle
+from Latent_islands_URIEL.src.functions import distance_vector_input
 
 
 class DistanceCalculator:
@@ -102,7 +107,7 @@ class MorphologicalCalculator(DistanceCalculator):
         return self._vector_distance(lang1, lang2)
 
 
-class ScripturalCalculator(DistanceCalculator):
+class GenericCalculator(DistanceCalculator):
     def __init__(self, dataset_path: str = None):
         super().__init__()
         if dataset_path is None:
@@ -111,6 +116,42 @@ class ScripturalCalculator(DistanceCalculator):
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
+
+
+class IslandCalculator(DistanceCalculator):
+    def __init__(self, dataset_path: str = None):
+        super().__init__()
+        if dataset_path is None:
+            raise ValueError("Dataset path must be provided.")
+        self.df = pd.read_csv(dataset_path, index_col=0)
+
+        island_path = os.path.join("Latent_islands_URIEL", "outputs", "bridged_island_full.pkl")
+        with open(island_path, 'rb') as f:
+            island_full = pickle.load(f)
+        self.islands = island_full
+
+    def calculate_distance(self, lang1: str, lang2: str) -> float:
+        if self.df is None:
+            raise ValueError("Dataframe is not initialized.")
+        # Using imputed data, so no need to check for -1
+        idx_with_values_1 = {idx for idx, value in enumerate(self.df.loc[lang1].to_numpy()) if value != -1}
+        idx_with_values_2 = {idx for idx, value in enumerate(self.df.loc[lang2].to_numpy()) if value != -1}
+        intersection = list(idx_with_values_1.intersection(idx_with_values_2))
+        # print("shared features: ", len(intersection))
+        if not intersection:
+            return np.nan
+        result = distance_vector_input(self.islands, self.df.loc[lang1].to_numpy(), self.df.loc[lang2].to_numpy())
+        return result
+
+class GeographicCalculator(DistanceCalculator):
+    def __init__(self, dataset_path: str = None):
+        super().__init__()
+        if dataset_path is None:
+            raise ValueError("Dataset path must be provided.")
+        self.df = pd.read_csv(dataset_path, index_col=0)
+
+    def calculate_distance(self, lang1: str, lang2: str) -> float:
+        return self.uriel.new_distance()
 
 
 class LangRankEvaluator:
@@ -147,7 +188,9 @@ class LangRankEvaluator:
         path_split = dataset_path.split('.')
         df.to_csv(f"{''.join(path_split[:-1])}_updated.{path_split[-1]}", index=False)
 
-    def evaluate(self, dataset_path: str, features: list[str], performance_col_name: str, task_col_name: str = 'task_lang', transfer_col_name: str = 'transfer_lang') -> float:
+    def evaluate(self, dataset_path: str, features: list[str], performance_col_name: str, task_col_name: str = 'task_lang', transfer_col_name: str = 'transfer_lang',
+                 baseline_ndcg_scores: list | None = None) -> \
+    tuple[int, list[Any], float] | tuple[int, list[Any]]:
         """
         Run LangRank and collect NDCG@3 scores for the given task.
         :param dataset_path: path to the task dataset (containing task, transfer, and performance columns)
@@ -155,8 +198,11 @@ class LangRankEvaluator:
         :param performance_col_name: name of the column containing the performance scores (e.g., 'f1_score')
         :param task_col_name: name of the column containing the task language codes (e.g., 'task_lang')
         :param transfer_col_name: name of the column containing the transfer language codes (e.g., 'transfer_lang')
+        :param baseline_ndcg_scores: optional list of baseline NDCG scores to compare against for statistical significance testing
         :return: average NDCG@3 score across all leave-one-out iterations
         """
+        if baseline_ndcg_scores is None:
+            baseline_ndcg_scores = []
         data = pd.read_csv(dataset_path)
         logo = LeaveOneGroupOut()
         data['relevance'] = 0
@@ -176,16 +222,16 @@ class LangRankEvaluator:
             metric='lambdarank',
 
             # New parameters
-            n_estimators=50,
-            min_child_samples=5,
-            num_leaves=8,
-            learning_rate=0.05,
+            # n_estimators=50,
+            # min_child_samples=5,
+            # num_leaves=8,
+            # learning_rate=0.05,
 
             # Old parameters
-            # n_estimators=100,
-            # min_data_in_leaf=5,
-            # num_leaves=16,
-            # learning_rate=0.1,
+            n_estimators=100,
+            min_data_in_leaf=5,
+            num_leaves=16,
+            learning_rate=0.1,
 
             verbose=-1
         )
@@ -210,5 +256,20 @@ class LangRankEvaluator:
         # lgb.plot_importance(ranker, importance_type='split')
         # plt.show()
 
-        average_ndcg = np.mean(ndcg_scores)
-        return average_ndcg * 100
+        average_ndcg = np.mean(ndcg_scores) * 100
+
+        if baseline_ndcg_scores and len(baseline_ndcg_scores) == len(ndcg_scores):
+            p_value = self._statistical_significance(ndcg_scores, baseline_ndcg_scores)
+            return average_ndcg, ndcg_scores, p_value
+
+        return average_ndcg, ndcg_scores
+
+    def _statistical_significance(self, ndcg_scores_1: list[float], ndcg_scores_2: list[float]) -> float:
+        """
+        Perform a paired t-test to determine if the difference between two sets of NDCG scores is statistically significant.
+        :param ndcg_scores_1: first set of NDCG scores
+        :param ndcg_scores_2: second set of NDCG scores
+        :return: p-value from the t-test
+        """
+        _, p_value = ttest_rel(ndcg_scores_1, ndcg_scores_2)
+        return p_value
