@@ -3,7 +3,9 @@ from lightgbm import LGBMRanker
 import lightgbm as lgb
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import ndcg_score
+print("Test")
 from urielplus.urielplus import URIELPlus
+print("Test1.25")
 import pandas as pd
 import numpy as np
 # import matplotlib.pyplot as plt
@@ -13,13 +15,16 @@ import pickle
 from Latent_islands_URIEL.src.functions import distance_vector_input
 
 
+
 class DistanceCalculator:
     """
     Base class for calculating language distances for some distance type.
     """
     def __init__(self):
+        print("Test1.5")
         self.uriel = URIELPlus()
         self.df = None
+        print("Test2")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         """
@@ -55,6 +60,7 @@ class SyntacticCalculator(DistanceCalculator):
             raise ValueError("Dataset path must be provided.")
         df = pd.read_csv(dataset_path, index_col=0)
         self.df = df[[col for col in df.columns if col.startswith("S_")]]
+        print("Test3")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -67,6 +73,7 @@ class InventoryCalculator(DistanceCalculator):
             raise ValueError("Dataset path must be provided.")
         df = pd.read_csv(dataset_path, index_col=0)
         self.df = df[[col for col in df.columns if col.startswith("INV_")]]
+        print("Test4")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -79,6 +86,7 @@ class PhonologicalCalculator(DistanceCalculator):
             raise ValueError("Dataset path must be provided.")
         df = pd.read_csv(dataset_path, index_col=0)
         self.df = df[[col for col in df.columns if col.startswith("P_")]]
+        print("Test5")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -90,6 +98,7 @@ class FeaturalCalculator(DistanceCalculator):
         if dataset_path is None:
             raise ValueError("Dataset path must be provided.")
         self.df = pd.read_csv(dataset_path, index_col=0)
+        print("Test6")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -102,6 +111,7 @@ class MorphologicalCalculator(DistanceCalculator):
             raise ValueError("Dataset path must be provided.")
         df = pd.read_csv(dataset_path, index_col=0)
         self.df = df[[col for col in df.columns if col.startswith("M_")]]
+        print("Test7")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -113,9 +123,20 @@ class GenericCalculator(DistanceCalculator):
         if dataset_path is None:
             raise ValueError("Dataset path must be provided.")
         self.df = pd.read_csv(dataset_path, index_col=0)
+        print("Test8")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
+
+class GeographicCalculator(DistanceCalculator):
+    def __init__(self, language_centroid_style, dataset_path: str = None, ):
+        super().__init__()
+        self.uriel.integrate_ethnologue_geo(language_centroid_style)
+        print("Test8")
+    
+    def calculate_distance(self, lang1: str, lang2: str) -> float:
+
+        return self.uriel.new_distance("geographic_w1_normalized", [lang1,lang2])
 
 
 class IslandCalculator(DistanceCalculator):
@@ -161,6 +182,7 @@ class LangRankEvaluator:
     def __init__(self, calculators: dict[str, DistanceCalculator], iso_map_file: str = 'data/code_mapping.csv'):
         self.calculators = calculators
         self.iso_map = pd.read_csv(iso_map_file, index_col=0).to_dict()['glottocode']
+        print("Test9")
 
     def replace_distances(self, dataset_path: str, distance_types: list[str], task_col_name: str = 'task_lang', transfer_col_name: str = 'transfer_lang', iso_conversion: bool = True) -> None:
         """
@@ -183,6 +205,13 @@ class LangRankEvaluator:
                 target_lang = row[task_col_name]
                 transfer_lang = row[transfer_col_name]
             for distance_type in distance_types:
+                if (distance_type == "geographic"):
+                   code_replacements  = pd.read_csv("glottocode_replacements.csv") 
+                   for index,row in code_replacements.iterrows():
+                       if (target_lang == row["bad_iso"]):
+                           target_lang = row["replacement_iso"]
+                       if (transfer_lang == row["bad_iso"]):
+                           transfer_lang = row["replacement_iso"]
                 distance = self.calculators[distance_type].calculate_distance(target_lang, transfer_lang)
                 df.at[index, distance_type] = distance
         path_split = dataset_path.split('.')
