@@ -32,6 +32,7 @@ Key methods of the `LangRankEvaluator` are:
   * `performance_col_name`: name of the column containing the performance scores (e.g., 'f1_score' in Taxi1500, 'BLEU' in machine translation)
   * `task_col_name`
   * `transfer_col_name`
+  * `baseline_ndcg_scores`: (optional) list of NDCG scores from the baseline. If provided, a p-value will additionally be returned.
 
 See `evaluate.ipynb` for a commented code example.
 
