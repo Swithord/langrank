@@ -3,9 +3,8 @@ from lightgbm import LGBMRanker
 import lightgbm as lgb
 from sklearn.model_selection import LeaveOneGroupOut
 from sklearn.metrics import ndcg_score
-print("Test")
+from tqdm import tqdm
 from urielplus.urielplus import URIELPlus
-print("Test1.25")
 import pandas as pd
 import numpy as np
 # import matplotlib.pyplot as plt
@@ -14,7 +13,12 @@ import os
 import pickle
 from Latent_islands_URIEL.src.functions import distance_vector_input
 from geo_distributions_helper import integrate_geo_data, normalized_w1_distance
+import pkg_resources
+from zipfile import ZipFile as zf
+import scipy.sparse as sparse
 
+
+u = URIELPlus()
 
 
 class DistanceCalculator:
@@ -22,10 +26,7 @@ class DistanceCalculator:
     Base class for calculating language distances for some distance type.
     """
     def __init__(self):
-        print("Test1.5")
-        self.uriel = URIELPlus()
         self.df = None
-        print("Test2")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         """
@@ -45,12 +46,18 @@ class DistanceCalculator:
         """
         if self.df is None:
             raise ValueError("Dataframe is not initialized.")
+        if lang1 not in self.df.index:
+            print(f"Language {lang1} not found in dataframe.")
+            return np.nan
+        if lang2 not in self.df.index:
+            print(f"Language {lang2} not found in dataframe.")
+            return np.nan
         idx_with_values_1 = {idx for idx, value in enumerate(self.df.loc[lang1].to_numpy()) if value != -1}
         idx_with_values_2 = {idx for idx, value in enumerate(self.df.loc[lang2].to_numpy()) if value != -1}
         intersection = list(idx_with_values_1.intersection(idx_with_values_2))
         if not intersection:
             return np.nan
-        return self.uriel._angular_distance(self.df.loc[lang1].iloc[intersection].to_numpy(),
+        return u._angular_distance(self.df.loc[lang1].iloc[intersection].to_numpy(),
                                             self.df.loc[lang2].iloc[intersection].to_numpy())
 
 
@@ -61,7 +68,6 @@ class SyntacticCalculator(DistanceCalculator):
             raise ValueError("Dataset path must be provided.")
         df = pd.read_csv(dataset_path, index_col=0)
         self.df = df[[col for col in df.columns if col.startswith("S_")]]
-        print("Test3")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -74,7 +80,6 @@ class InventoryCalculator(DistanceCalculator):
             raise ValueError("Dataset path must be provided.")
         df = pd.read_csv(dataset_path, index_col=0)
         self.df = df[[col for col in df.columns if col.startswith("INV_")]]
-        print("Test4")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -87,7 +92,6 @@ class PhonologicalCalculator(DistanceCalculator):
             raise ValueError("Dataset path must be provided.")
         df = pd.read_csv(dataset_path, index_col=0)
         self.df = df[[col for col in df.columns if col.startswith("P_")]]
-        print("Test5")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -99,7 +103,6 @@ class FeaturalCalculator(DistanceCalculator):
         if dataset_path is None:
             raise ValueError("Dataset path must be provided.")
         self.df = pd.read_csv(dataset_path, index_col=0)
-        print("Test6")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -112,7 +115,6 @@ class MorphologicalCalculator(DistanceCalculator):
             raise ValueError("Dataset path must be provided.")
         df = pd.read_csv(dataset_path, index_col=0)
         self.df = df[[col for col in df.columns if col.startswith("M_")]]
-        print("Test7")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -124,7 +126,6 @@ class GenericCalculator(DistanceCalculator):
         if dataset_path is None:
             raise ValueError("Dataset path must be provided.")
         self.df = pd.read_csv(dataset_path, index_col=0)
-        print("Test8")
 
     def calculate_distance(self, lang1: str, lang2: str) -> float:
         return self._vector_distance(lang1, lang2)
@@ -165,6 +166,41 @@ class GeographicCalculator(DistanceCalculator):
         result = normalized_w1_distance(lang1, lang2, self.df, normalize_type)
         return result
 
+class URIELCalculator(DistanceCalculator):
+    def __init__(self, dist: str):
+        super().__init__()
+        DISTANCES_LANGUAGE_FILE = pkg_resources.resource_filename(__name__, "l2v/l2v/data/distances_languages.txt")
+        DISTANCES_FILE = pkg_resources.resource_filename(__name__, "l2v/l2v/data/distances2.zip")
+
+        distance_to_filename = {
+            "genetic": "genetic_upper_sparse.npz",
+            "geographic": "geographic_upper_round1_sparse.npz",
+            "syntactic": "syntactic_upper_round2_sparse.npz",
+            "inventory": "inventory_upper_sparse.npz",
+            "phonological": "phonological_upper_sparse.npz",
+            "featural": "featural_upper_round1_sparse.npz"
+        }
+
+        def available_distance_languages():
+            with open(DISTANCES_LANGUAGE_FILE) as inp:
+                return inp.readline().strip().split(',')
+
+        self.DISTANCE_LANGUAGES = available_distance_languages()
+
+        self._cached_matrix = None
+
+        with zf(DISTANCES_FILE, 'r') as zp:
+            with zp.open(distance_to_filename[dist]) as f:
+                self._cached_matrix = sparse.load_npz(f)
+
+        self.iso_map = pd.read_csv('data/uriel_glottocode_map.csv', index_col=2).to_dict()['code']
+
+    def calculate_distance(self, lang1: str, lang2: str) -> float:
+        idx1 = self.DISTANCE_LANGUAGES.index(self.iso_map[lang1])
+        idx2 = self.DISTANCE_LANGUAGES.index(self.iso_map[lang2])
+        if idx1 > idx2:
+            idx1, idx2 = idx2, idx1
+        return self._cached_matrix[idx1, idx2]
 
 class LangRankEvaluator:
     """
@@ -173,7 +209,6 @@ class LangRankEvaluator:
     def __init__(self, calculators: dict[str, DistanceCalculator], iso_map_file: str = 'data/code_mapping.csv'):
         self.calculators = calculators
         self.iso_map = pd.read_csv(iso_map_file, index_col=0).to_dict()['glottocode']
-        print("Test9")
 
     def replace_distances(self, dataset_path: str, distance_types: list[str], task_col_name: str = 'task_lang', transfer_col_name: str = 'transfer_lang', iso_conversion: bool = True) -> None:
         """
@@ -188,7 +223,7 @@ class LangRankEvaluator:
         if any(distance_type not in self.calculators for distance_type in distance_types):
             raise ValueError("Invalid distance types provided.")
         df = pd.read_csv(dataset_path)
-        for index, row in df.iterrows():
+        for index, row in tqdm(df.iterrows()):
             if iso_conversion:
                 target_lang = self.iso_map[row[task_col_name]]
                 transfer_lang = self.iso_map[row[transfer_col_name]]
@@ -196,8 +231,8 @@ class LangRankEvaluator:
                 target_lang = row[task_col_name]
                 transfer_lang = row[transfer_col_name]
             for distance_type in distance_types:
-                if (distance_type == "geographic"):
-                   code_replacements  = pd.read_csv("glottocode_replacements.csv") 
+                if (distance_type == "new_geographic"):
+                   code_replacements = pd.read_csv("glottocode_replacements.csv")
                    for idx, line in code_replacements.iterrows():
                        if (target_lang == line["bad_iso"]):
                            target_lang = line["replacement_iso"]

@@ -15,7 +15,7 @@ def build_distributions(df):
     return lang_distributions
 
 def integrate_geo_data(language_centroid_style):
-    print("HELLO RUNNING INTEGRATE_GEO_DATA")
+    # print("HELLO RUNNING INTEGRATE_GEO_DATA")
     df = {}
     if (language_centroid_style == 0):
         path = "data/language_country_merged_data_old_coord.csv"
