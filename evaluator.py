@@ -232,7 +232,7 @@ class LangRankEvaluator:
                 transfer_lang = row[transfer_col_name]
             for distance_type in distance_types:
                 if (distance_type == "new_geographic"):
-                   code_replacements = pd.read_csv("glottocode_replacements.csv")
+                   code_replacements = pd.read_csv("data/glottocode_replacements.csv")
                    for idx, line in code_replacements.iterrows():
                        if (target_lang == line["bad_iso"]):
                            target_lang = line["replacement_iso"]
