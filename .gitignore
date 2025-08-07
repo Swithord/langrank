@@ -1,0 +1,9 @@
+# .gitignore
+
+# Large data files
+data/URIEL_Phylogeny.csv
+lookup/lookup_hyperboloid_float32.npz
+
+# You can also use wildcards
+# For example, to ignore all .npz files in the lookup/ directory:
+# lookup/*.npz

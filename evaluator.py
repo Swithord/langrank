@@ -155,6 +155,41 @@ class IslandCalculator(DistanceCalculator):
             return np.nan
         result = distance_vector_input(self.islands, self.df.loc[lang1].to_numpy(), self.df.loc[lang2].to_numpy())
         return result
+    
+class HyperbolicCalculator(DistanceCalculator):
+    """
+    Calculates language distances by looking them up in a pre-computed 
+    distance matrix from a .npz file.
+    """
+    def __init__(self, dataset_path: str = 'lookup/lookup_hyperboloid_float32.npz'):
+        """
+        Loads the distance matrix and the language-to-index mapping.
+        
+        :param dataset_path: Path to your .npz file.
+        """
+        if not dataset_path:
+            raise ValueError("A path to the .npz dataset must be provided.")
+        loaded_data = np.load(dataset_path, allow_pickle=True)
+        self.dist_matrix = loaded_data['distance_matrix']
+        self.id2i_map = loaded_data['id2i'].item()
+
+    def calculate_distance(self, lang1: str, lang2: str) -> float:
+        """
+        Calculate the distance by looking up the indices for lang1 and lang2
+        and finding the value in the distance matrix.
+        
+        :param lang1: Glottocode for language 1 (e.g., 'stan1279')
+        :param lang2: Glottocode for language 2 (e.g., 'stan1295')
+        :return: float distance, or np.nan if a language is not found
+        """
+        try:
+            index_a = self.id2i_map[lang1]
+            index_b = self.id2i_map[lang2]
+
+            return np.log1p(self.dist_matrix[index_a, index_b])
+        except KeyError:
+
+            return np.nan
 
 class GeographicCalculator(DistanceCalculator):
     def __init__(self, language_centroid_style: int):
