@@ -1,0 +1,15 @@
+graphviz
+lightgbm
+matplotlib
+networkx
+numpy
+pandas
+pyproj
+scikit_learn
+scipy
+setuptools
+torch
+torchsummary
+torchvision
+tqdm
+urielplus
